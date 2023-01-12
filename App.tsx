@@ -1,7 +1,10 @@
 
-import { StatusBar, Text, View } from 'react-native';
-
+import { StatusBar } from 'react-native';
+import { NativeBaseProvider } from 'native-base';
 import { useFonts, Roboto_400Regular, Roboto_700Bold } from '@expo-google-fonts/roboto';
+import { Loading } from '@components/Loading';
+import { THEME } from './src/theme';
+import { Routes } from '@routes/index';
 
 export default function App() {
 
@@ -11,14 +14,14 @@ export default function App() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#202024", alignItems: "center", justifyContent: "center" }}>
+    <NativeBaseProvider theme={THEME}>
       <StatusBar
         barStyle="light-content"
         backgroundColor="transparent"
         translucent
       />
-      {fontsLoaded ? <Text>Olá mundo</Text> : <View />}
-    </View>
+      {fontsLoaded ? <Routes /> : <Loading />}
+    </NativeBaseProvider>
   );
 }
 
