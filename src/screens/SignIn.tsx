@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Center, Image, Text, VStack, Heading, ScrollView } from "native-base";
 
 import LogoSvg from "@assets/logo.svg";
