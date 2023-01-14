@@ -8,6 +8,8 @@ import { Button } from "@components/Button";
 
 import { useNavigation } from "@react-navigation/native";
 import { useForm, Controller } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
 
 type FormDataProps = {
     name: string;
@@ -16,9 +18,30 @@ type FormDataProps = {
     password_confirm: string;
 }
 
+const signUpSchema = yup.object({
+    name: yup.string().required("Nome é obrigatório"),
+    email: yup.string()
+        .required("E-mail é obrigatório")
+        .email("E-mail inválido"),
+    password: yup.string()
+        .required("Senha é obrigatória")
+        .min(6, "Senha deve ter pelo menos 6 caracteres"),
+    password_confirm: yup.string()
+        .required("Confirmação de senha é obrigatória")
+        .oneOf([yup.ref("password")], "A confirmação da senha não confere")
+});
+
 export function SignUp() {
 
-    const { control, handleSubmit } = useForm<FormDataProps>();
+    const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
+        defaultValues: {
+            name: "",
+            email: "",
+            password: "",
+            password_confirm: ""
+        },
+        resolver: yupResolver(signUpSchema)
+    });
 
     const navigation = useNavigation();
 
@@ -67,10 +90,10 @@ export function SignUp() {
                                 placeholder="Nome"
                                 onChangeText={onChange}
                                 value={value}
+                                errorMessage={errors.name?.message}
                             />
                         )}
                     />
-
 
                     <Controller
                         control={control}
@@ -82,6 +105,7 @@ export function SignUp() {
                                 autoCapitalize="none"
                                 onChangeText={onChange}
                                 value={value}
+                                errorMessage={errors.email?.message}
                             />
                         )}
                     />
@@ -95,6 +119,7 @@ export function SignUp() {
                                 secureTextEntry
                                 onChangeText={onChange}
                                 value={value}
+                                errorMessage={errors.password?.message}
                             />
                         )}
                     />
@@ -110,6 +135,7 @@ export function SignUp() {
                                 onSubmitEditing={handleSubmit(handleSignUp)}
                                 returnKeyType="send"
                                 value={value}
+                                errorMessage={errors.password_confirm?.message}
                             />
                         )}
                     />
