@@ -6,6 +6,7 @@ import { TouchableOpacity } from "react-native";
 import { useAuth } from "@hooks/useAuth";
 
 import defaultUserPhoto from "@assets/userPhotoDefault.png";
+import { api } from "@services/api";
 
 export function HomeHeader() {
 
@@ -21,7 +22,7 @@ export function HomeHeader() {
         >
             <UserPhoto
                 source={
-                    user.avatar ? { uri: user.avatar } : defaultUserPhoto
+                    user.avatar ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` } : defaultUserPhoto
                 }
                 alt="Foto do usuário"
                 size={16}

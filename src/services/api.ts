@@ -6,17 +6,17 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-    console.log("DADOS ENVIADOS", config.data);
+    // console.log("DADOS ENVIADOS", config.data);
     return config;
 }, (error) => {
     return Promise.reject(error);
 });
 
 api.interceptors.response.use((response) => {
-    console.log("DADOS RECEBIDOS COM SUCESSO", response.data);
+    // console.log("DADOS RECEBIDOS COM SUCESSO", response.data);
     return response;
 }, (error) => {
-    console.log("DADOS RECEBIDOS COM ERROR");
+    // console.log("DADOS RECEBIDOS COM ERROR");
     if (error.response && error.response.data) {
         return Promise.reject(new AppError(error.response.data.message));
     } else {
