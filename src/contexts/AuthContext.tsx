@@ -24,11 +24,6 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     const [user, setUser] = useState<UserDTO>({} as UserDTO);
     const [isLoadingUserStorageData, setIsLoadingUserStorageData] = useState(true);
 
-    useEffect(() => {
-        loadUserData();
-    }, []);
-
-
     async function userAndTokenUpdate(userData: UserDTO, token: string) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         setUser(userData);
@@ -86,6 +81,17 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         setUser(userUpdated);
         await storageUserSave(userUpdated);
     }
+
+    useEffect(() => {
+        loadUserData();
+    }, []);
+
+    // Passa a função de signOut para o axios
+    useEffect(() => {
+        const subscribe = api.registerInterceptTokenManager(signOut);
+
+        return () => subscribe();
+    }, [signOut]);
 
     return (
         <AuthContext.Provider value={{ user, signIn, signOut, isLoadingUserStorageData, updateUserProfle }}>

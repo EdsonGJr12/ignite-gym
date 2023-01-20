@@ -8,6 +8,7 @@ import { api } from "@services/api";
 import { AppError } from "@utils/AppError";
 import { useFocusEffect } from "@react-navigation/native";
 import { HistoryByDayDTO } from "@dtos/HistoryByDayDTO";
+import { Loading } from "@components/Loading";
 
 export function History() {
 
@@ -19,8 +20,8 @@ export function History() {
     async function fetchHistory() {
         try {
             const response = await api.get(`/history`);
+            console.log("chegou aqui no histórico", response.data);
             setExercises(response.data);
-            console.log(response.data);
         } catch (error) {
             const isAppError = error instanceof AppError;
             const title = isAppError ? error.message : "Não foi possível carregar o histórico";
@@ -38,9 +39,13 @@ export function History() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchHistory()
+            fetchHistory();
         }, [])
     );
+
+    if (isLoading) {
+        return <Loading />
+    }
 
     return (
         <VStack flex={1}>
