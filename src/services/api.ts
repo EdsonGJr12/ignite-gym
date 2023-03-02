@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 
 import { AppError } from "@utils/AppError";
 import { storageAuthTokenSaveGet, storageAuthTokenSave } from "@storage/storageAuthToken";
@@ -6,8 +6,8 @@ import { storageAuthTokenSaveGet, storageAuthTokenSave } from "@storage/storageA
 type SignOut = () => void;
 
 type PromiseType = {
-    resolve: (value?: unknown) => void,
-    reject: (reason?: unknown) => void,
+    onSuccess: (token: string) => void,
+    onFailure: (error: AxiosError) => void,
 };
 
 // Cria uma tipagem personalizada para o axios, recebendo a função de signOut
@@ -35,11 +35,8 @@ api.registerInterceptTokenManager = signOut => {
             if (requestError.response.data.message === "token.expired" ||
                 requestError.response.data.message === "token.invalid") {
 
-                const oldToken = await storageAuthTokenSaveGet();
-
-                // Se não tiver token
-                if (!oldToken) {
-                    console.log("aqui 1")
+                const { refresh_token } = await storageAuthTokenSaveGet();
+                if (!refresh_token) {
                     signOut();
                     return Promise.reject(requestError);
                 }
@@ -48,12 +45,19 @@ api.registerInterceptTokenManager = signOut => {
 
                 if (isRefreshing) {
                     return new Promise((resolve, reject) => {
-                        failedQueue.push({ resolve, reject });
+                        failedQueue.push({
+                            onSuccess: (token: string) => {
+                                resolve(token);
+                            },
+                            onFailure: (error: AxiosError) => {
+                                reject(error);
+                            }
+                        });
                     })
                         // Depois de armazenar a request na fila
                         .then(token => {
                             originalRequest.headers['Authorization'] = `Bearer ${token}`;
-                            return axios(originalRequest);
+                            return api(originalRequest);
                         })
                         .catch(error => {
                             throw error;
@@ -67,34 +71,38 @@ api.registerInterceptTokenManager = signOut => {
                 // Faz a primeira request que chegou esperar a atualização do token
                 return new Promise(async (resolve, reject) => {
                     try {
-                        const { data } = await api.post("/sessions/refresh-token", { token: oldToken });
-                        await storageAuthTokenSave(data.token);
+                        const { data } = await api.post("/sessions/refresh-token", { refresh_token });
+
+                        await storageAuthTokenSave({
+                            token: data.token,
+                            refresh_token: data.refresh_token
+                        });
 
                         api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
                         originalRequest.headers['Authorization'] = `Bearer ${data.token}`;
 
-                        failedQueue.forEach(requestFailed => {
-                            requestFailed.resolve(data.token);
+                        failedQueue.forEach(failedRequest => {
+                            failedRequest.onSuccess(data.token);
                         });
 
                         console.log("TOKEN ATUALIZADO", data.token);
 
                         resolve(axios(originalRequest));
-                    } catch (error) {
+                    } catch (error: any) {
 
                         console.log("aqui 3", error)
 
-                        failedQueue.forEach(requestFailed => {
-                            requestFailed.reject(error);
+                        failedQueue.forEach(failedRequest => {
+                            failedRequest.onFailure(error);
                         });
 
                         signOut();
                         reject(error);
                     } finally {
                         isRefreshing = false;
+                        failedQueue = [];
                     }
 
-                    failedQueue = [];
                 });
 
             }
